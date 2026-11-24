@@ -3,7 +3,7 @@
  * Talks only to the Worker. No secrets here.
  */
 
-const API_BASE = window.ACHADOS_API_BASE || 'https://achados-api.YOUR_SUBDOMAIN.workers.dev';
+const API_BASE = window.ACHADOS_API_BASE || 'https://achados-api.dioboss15.workers.dev';
 
 // Fallback demo catalog when Worker is not yet deployed
 const DEMO_CATALOG = {

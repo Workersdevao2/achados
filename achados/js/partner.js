@@ -3,7 +3,7 @@
  * Token stays only in sessionStorage. Never in localStorage or URL.
  */
 
-const API_BASE = window.ACHADOS_API_BASE || 'https://achados-api.YOUR_SUBDOMAIN.workers.dev';
+const API_BASE = window.ACHADOS_API_BASE || 'https://achados-api.dioboss15.workers.dev';
 
 const PartnerApp = {
   token: null,

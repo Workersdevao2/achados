@@ -6,12 +6,12 @@ compatibility_date = "2024-11-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "achados-db"
-database_id = "0c068221-efc5-419f-bb5b-cdae3f058916"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
 
 # KV for catalog – create with: wrangler kv:namespace create CATALOG
 [[kv_namespaces]]
 binding = "CATALOG"
-id = "912151a07a2f4480a2587c4eb9b732c4"
+id = "REPLACE_WITH_YOUR_KV_ID"
 
 # Optional: later secrets
 # wrangler secret put ADMIN_PASSWORD
