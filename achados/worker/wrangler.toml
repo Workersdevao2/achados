@@ -1,0 +1,18 @@
+name = "achados-api"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# D1 database – create with: wrangler d1 create achados-db
+[[d1_databases]]
+binding = "DB"
+database_name = "achados-db"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
+
+# KV for catalog – create with: wrangler kv:namespace create CATALOG
+[[kv_namespaces]]
+binding = "CATALOG"
+id = "REPLACE_WITH_YOUR_KV_ID"
+
+# Optional: later secrets
+# wrangler secret put ADMIN_PASSWORD
+# wrangler secret put CLOUDINARY_API_SECRET

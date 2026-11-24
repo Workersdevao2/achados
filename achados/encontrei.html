@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Encontrei um objecto – Achados AO</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="assets/logo.jpeg" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="logo-link">
+        <img src="assets/logo.jpeg" alt="Achados AO" class="logo-img" />
+        <span class="logo-text">Achados <span>AO</span></span>
+      </a>
+      <button class="nav-toggle" aria-label="Menu" id="navToggle">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <nav class="main-nav" id="mainNav">
+        <a href="index.html">Início</a>
+        <a href="pesquisar.html">Pesquisar</a>
+        <a href="encontrei.html">Encontrei</a>
+        <a href="pontos.html">Pontos de entrega</a>
+        <a href="partner.html" class="btn btn-secondary" style="padding:0.45rem 1rem;font-size:0.85rem;">Área Parceiro</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h1 style="font-size:1.4rem;font-weight:800;margin-bottom:0.5rem;">Encontrei um objecto</h1>
+    <p style="color:var(--color-gray-500);margin-bottom:1.25rem;font-size:0.95rem;">
+      Registe apenas o necessário. Nunca coloque números de documentos, nomes completos ou fotografias legíveis de BI/cartões.
+    </p>
+
+    <div class="alert alert-warning">
+      O registo online <strong>não substitui</strong> a entrega física. Até à confirmação da instituição, o anúncio aparece como “Entrega pendente”.
+    </div>
+
+    <div id="formContainer">
+      <form class="form-card" id="foundForm" novalidate>
+        <div class="form-group">
+          <label for="category">Categoria *</label>
+          <select id="category" name="category" class="form-control" required>
+            <option value="">Seleccione...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="description_public">Descrição pública (segura) *</label>
+          <textarea id="description_public" name="description_public" class="form-control" required
+            placeholder="Ex: Carteira preta, Mochila azul, Telemóvel preto com capa vermelha..."></textarea>
+          <p class="hint">Não escreva números de documentos, nomes ou dados sensíveis.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="zone">Zona / Bairro onde encontrou *</label>
+          <input type="text" id="zone" name="zone" class="form-control" required placeholder="Ex: Talatona, Maianga, Viana..." />
+        </div>
+
+        <div class="form-group">
+          <label for="municipio">Município *</label>
+          <input type="text" id="municipio" name="municipio" class="form-control" required placeholder="Ex: Belas, Luanda, Cacuaco..." />
+        </div>
+
+        <div class="form-group">
+          <label for="provincia">Província</label>
+          <input type="text" id="provincia" name="provincia" class="form-control" value="Luanda" />
+        </div>
+
+        <div class="form-group">
+          <label for="found_date_approx">Data aproximada do encontro *</label>
+          <input type="date" id="found_date_approx" name="found_date_approx" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+          <label for="partner_id">Ponto de entrega parceiro *</label>
+          <select id="partner_id" name="partner_id" class="form-control" required>
+            <option value="">Seleccione um posto...</option>
+          </select>
+          <p class="hint">É para este local que deve entregar o objecto físico.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="finder_contact">O seu contacto (telefone ou e-mail) *</label>
+          <input type="text" id="finder_contact" name="finder_contact" class="form-control" required
+            placeholder="Só para a equipa / posto poder contactá-lo se necessário" />
+          <p class="hint">Este dado nunca aparece publicamente.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="photo">Fotografia (opcional)</label>
+          <input type="file" id="photo" name="photo" class="form-control" accept="image/*" />
+          <p class="hint">Apenas fotos genéricas (ex: mochila azul). Nunca documentos legíveis.</p>
+        </div>
+
+        <div id="formMessage"></div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Registar achado</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="successContainer" style="display:none;">
+      <div class="form-card" style="text-align:center;">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem;">✅</div>
+        <h2 style="font-size:1.25rem;margin-bottom:0.5rem;">Registo criado com sucesso</h2>
+        <p style="color:var(--color-gray-700);margin-bottom:1rem;">
+          O seu código de registo é:
+        </p>
+        <p style="font-size:1.75rem;font-weight:800;color:var(--color-primary);letter-spacing:0.05em;" id="publicCode"></p>
+        <p style="font-size:0.9rem;color:var(--color-gray-500);margin:1rem 0;">
+          Guarde este código. Entregue o objecto físico no posto escolhido e mostre o código.
+        </p>
+        <div class="alert alert-info" style="text-align:left;">
+          Estado actual: <strong>Entrega pendente</strong><br />
+          O anúncio só passa a “Recebido no posto” depois da confirmação da instituição.
+        </div>
+        <a href="index.html" class="btn btn-primary" style="margin-top:1rem;">Voltar ao início</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 Achados AO · Luanda, Angola</p>
+  </footer>
+
+  <script src="js/public.js"></script>
+  <script>
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.getElementById('mainNav').classList.toggle('open');
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.AchadosPublic) AchadosPublic.initFoundForm();
+    });
+  </script>
+</body>
+</html>

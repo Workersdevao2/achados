@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pesquisar achados – Achados AO</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="assets/logo.jpeg" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="logo-link">
+        <img src="assets/logo.jpeg" alt="Achados AO" class="logo-img" />
+        <span class="logo-text">Achados <span>AO</span></span>
+      </a>
+      <button class="nav-toggle" aria-label="Menu" id="navToggle">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <nav class="main-nav" id="mainNav">
+        <a href="index.html">Início</a>
+        <a href="pesquisar.html">Pesquisar</a>
+        <a href="encontrei.html">Encontrei</a>
+        <a href="pontos.html">Pontos de entrega</a>
+        <a href="partner.html" class="btn btn-secondary" style="padding:0.45rem 1rem;font-size:0.85rem;">Área Parceiro</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h1 style="font-size:1.4rem;font-weight:800;margin-bottom:0.5rem;">Pesquisar achados</h1>
+    <p style="color:var(--color-gray-500);margin-bottom:1.25rem;font-size:0.95rem;">
+      Apenas dados seguros são mostrados. Encontrar uma correspondência provável não confirma a propriedade.
+    </p>
+
+    <form class="form-card" id="searchForm" style="margin-bottom:1.5rem;">
+      <div class="form-group">
+        <label for="q">Palavra-chave</label>
+        <input type="search" id="q" name="q" class="form-control" placeholder="Ex: carteira, mochila, telemóvel..." />
+      </div>
+      <div class="form-group">
+        <label for="category">Categoria</label>
+        <select id="category" name="category" class="form-control">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="municipio">Município</label>
+        <input type="text" id="municipio" name="municipio" class="form-control" placeholder="Ex: Belas, Viana..." />
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-block">Pesquisar</button>
+      </div>
+    </form>
+
+    <div id="resultsArea">
+      <div class="state-box" id="initialState">
+        <div class="icon">🔍</div>
+        <p>Use os filtros acima para pesquisar objectos encontrados.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 Achados AO · Luanda, Angola</p>
+  </footer>
+
+  <script src="js/public.js"></script>
+  <script>
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.getElementById('mainNav').classList.toggle('open');
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.AchadosPublic) AchadosPublic.initSearchPage();
+    });
+  </script>
+</body>
+</html>

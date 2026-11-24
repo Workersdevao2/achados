@@ -1,0 +1,48 @@
+-- Achados AO – Phase 1 D1 schema
+
+CREATE TABLE IF NOT EXISTS partners (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT,                    -- esquadra | bombeiros | admin | hospital | uni | centro | other
+  address TEXT,
+  municipio TEXT,
+  provincia TEXT DEFAULT 'Luanda',
+  lat REAL,
+  lng REAL,
+  contact_phone TEXT,
+  status TEXT DEFAULT 'active', -- active | pending | suspended
+  api_token_hash TEXT,          -- simple hash or plain token for Phase 1 (upgrade later)
+  hours_json TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS items (
+  id TEXT PRIMARY KEY,
+  public_code TEXT UNIQUE NOT NULL,
+  category TEXT NOT NULL,
+  description_public TEXT NOT NULL,
+  zone TEXT,
+  municipio TEXT,
+  provincia TEXT DEFAULT 'Luanda',
+  found_date_approx TEXT,
+  photo_urls_json TEXT DEFAULT '[]',
+  status TEXT DEFAULT 'Entrega pendente',  -- Entrega pendente | Recebido no posto | ...
+  partner_id TEXT,
+  finder_contact TEXT,          -- private
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  received_at TEXT,
+  FOREIGN KEY (partner_id) REFERENCES partners(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_items_status ON items(status);
+CREATE INDEX IF NOT EXISTS idx_items_partner ON items(partner_id);
+CREATE INDEX IF NOT EXISTS idx_items_public_code ON items(public_code);
+CREATE INDEX IF NOT EXISTS idx_items_category ON items(category);
+
+-- Seed a few demo partners (tokens are simple for Phase 1 – change in production)
+INSERT OR IGNORE INTO partners (id, name, type, address, municipio, provincia, api_token_hash, status) VALUES
+('p1', 'Esquadra da Polícia – Talatona', 'esquadra', 'Talatona', 'Belas', 'Luanda', 'demo-token-talatona-2026', 'active'),
+('p2', 'Bombeiros – Maianga', 'bombeiros', 'Maianga', 'Luanda', 'Luanda', 'demo-token-maianga-2026', 'active'),
+('p3', 'Administração Municipal – Viana', 'admin', 'Viana', 'Viana', 'Luanda', 'demo-token-viana-2026', 'active');
