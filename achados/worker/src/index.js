@@ -280,7 +280,8 @@ export default {
       return error('Not found', 404);
     } catch (err) {
       console.error(err);
-      return error('Erro interno do servidor', 500);
+      // Temporary: return the real error so we can debug (remove later)
+      return error(err.message || 'Erro interno do servidor', 500);
     }
   }
 };
