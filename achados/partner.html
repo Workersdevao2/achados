@@ -66,6 +66,19 @@
     <p>© 2026 Achados AO · Área reservada a instituições parceiras</p>
   </footer>
 
+  <!-- Reusable modal (confirm / error) -->
+  <div id="appModal" class="modal-overlay" hidden aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle" class="modal-title">Confirmar</h2>
+      <p id="modalBody" class="modal-body"></p>
+      <div id="modalError" class="alert alert-danger" hidden style="margin-bottom:1rem;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="modalCancel">Cancelar</button>
+        <button type="button" class="btn btn-success" id="modalConfirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/partner.js"></script>
 </body>
 </html>

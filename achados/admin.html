@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin – Achados AO</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="assets/logo.jpeg" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="logo-link">
+        <img src="assets/logo.jpeg" alt="Achados AO" class="logo-img" />
+        <span class="logo-text">Achados <span>AO</span></span>
+      </a>
+      <nav class="main-nav" style="display:flex;">
+        <a href="index.html">← Site público</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Login -->
+    <div id="loginView" class="partner-login">
+      <div class="form-card">
+        <h1 style="font-size:1.3rem;font-weight:800;margin-bottom:0.5rem;text-align:center;">Admin Achados AO</h1>
+        <p style="text-align:center;color:var(--color-gray-500);font-size:0.9rem;margin-bottom:1.25rem;">
+          Área restrita. Introduza a password de administração.
+        </p>
+        <form id="adminLoginForm">
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" class="form-control" required autocomplete="current-password" />
+          </div>
+          <div id="loginMessage"></div>
+          <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Entrar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboardView" style="display:none;">
+      <div class="partner-header">
+        <div>
+          <h1 style="font-size:1.3rem;font-weight:800;">Painel Admin</h1>
+          <p style="color:var(--color-gray-500);font-size:0.9rem;">Parceiros e itens · sessão 8h</p>
+        </div>
+        <button class="btn btn-secondary" id="logoutBtn">Sair</button>
+      </div>
+
+      <div class="admin-tabs" id="adminTabs">
+        <button type="button" class="admin-tab active" data-tab="items">Itens</button>
+        <button type="button" class="admin-tab" data-tab="partners">Parceiros</button>
+      </div>
+
+      <div id="tabItems">
+        <div class="form-group" style="max-width:280px;margin-bottom:1rem;">
+          <label for="statusFilter">Filtrar por estado</label>
+          <select id="statusFilter" class="form-control">
+            <option value="">Todos</option>
+            <option>Entrega pendente</option>
+            <option>Recebido no posto</option>
+            <option>Em validação</option>
+            <option>Devolvido</option>
+            <option>Encerrado</option>
+          </select>
+        </div>
+        <div id="itemsList">
+          <div class="state-box"><div class="spinner"></div><p>A carregar...</p></div>
+        </div>
+      </div>
+
+      <div id="tabPartners" style="display:none;">
+        <div id="partnersList">
+          <div class="state-box"><div class="spinner"></div><p>A carregar...</p></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 Achados AO · Admin</p>
+  </footer>
+
+  <!-- Modal (reuse pattern) -->
+  <div id="appModal" class="modal-overlay" hidden aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle" class="modal-title">Confirmar</h2>
+      <p id="modalBody" class="modal-body"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="modalCancel">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="modalConfirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

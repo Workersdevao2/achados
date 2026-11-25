@@ -249,6 +249,125 @@ async function handlePartner(request, env) {
   return error('Acção desconhecida');
 }
 
+// ---------- Admin endpoints ----------
+const ALLOWED_STATUSES = [
+  'Entrega pendente',
+  'Recebido no posto',
+  'Em validação',
+  'Devolvido',
+  'Encerrado'
+];
+
+async function timingSafeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const enc = new TextEncoder();
+  const bufA = enc.encode(a);
+  const bufB = enc.encode(b);
+  if (bufA.byteLength !== bufB.byteLength) {
+    // still compare to avoid length leak timing somewhat
+    await crypto.subtle.digest('SHA-256', bufA);
+    return false;
+  }
+  return crypto.subtle.timingSafeEqual(bufA, bufB);
+}
+
+async function handleAdmin(request, env) {
+  if (!env.ADMIN_PASSWORD) {
+    return error('Admin não configurado. Defina o secret ADMIN_PASSWORD.', 503);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return error('JSON inválido');
+  }
+
+  const { action, password, session, data } = body;
+
+  // Auth: exchange password for a short-lived session token in KV
+  if (action === 'auth') {
+    if (!password) return error('Password em falta', 401);
+    const ok = await timingSafeEqual(password, env.ADMIN_PASSWORD);
+    if (!ok) return error('Password incorrecta', 401);
+
+    const sessionId = crypto.randomUUID();
+    if (env.CATALOG) {
+      await env.CATALOG.put(`admin_sess:${sessionId}`, '1', { expirationTtl: 28800 }); // 8h
+    }
+    return json({ ok: true, session: sessionId });
+  }
+
+  // All other actions require a valid session
+  if (!session) return error('Sessão em falta', 401);
+  if (env.CATALOG) {
+    const valid = await env.CATALOG.get(`admin_sess:${session}`);
+    if (!valid) return error('Sessão inválida ou expirada', 401);
+  } else {
+    return error('KV CATALOG em falta para sessões admin', 503);
+  }
+
+  if (action === 'list_partners') {
+    const { results } = await env.DB.prepare(`
+      SELECT id, name, type, address, municipio, provincia, status,
+             substr(api_token_hash, 1, 12) || '…' AS token_hint, created_at
+      FROM partners
+      ORDER BY name
+    `).all();
+    return json({ ok: true, partners: results || [] });
+  }
+
+  if (action === 'list_items') {
+    const statusFilter = data?.status || '';
+    let sql = `
+      SELECT i.id, i.public_code, i.category, i.description_public, i.zone, i.municipio,
+             i.status, i.created_at, i.received_at, i.partner_id,
+             p.name AS partner_name
+      FROM items i
+      LEFT JOIN partners p ON p.id = i.partner_id
+    `;
+    const params = [];
+    if (statusFilter && ALLOWED_STATUSES.includes(statusFilter)) {
+      sql += ` WHERE i.status = ?`;
+      params.push(statusFilter);
+    }
+    sql += ` ORDER BY i.created_at DESC LIMIT 100`;
+    const stmt = env.DB.prepare(sql);
+    const { results } = params.length ? await stmt.bind(...params).all() : await stmt.all();
+    return json({ ok: true, items: results || [] });
+  }
+
+  if (action === 'set_status') {
+    const itemId = data?.item_id;
+    const newStatus = data?.status;
+    if (!itemId || !newStatus) return error('item_id e status obrigatórios');
+    if (!ALLOWED_STATUSES.includes(newStatus)) return error('Estado inválido');
+
+    const item = await env.DB.prepare(`SELECT id, status FROM items WHERE id = ?`).bind(itemId).first();
+    if (!item) return error('Item não encontrado', 404);
+
+    const extra =
+      newStatus === 'Recebido no posto' && item.status === 'Entrega pendente'
+        ? `, received_at = datetime('now')`
+        : '';
+
+    await env.DB.prepare(`
+      UPDATE items SET status = ?, updated_at = datetime('now')${extra} WHERE id = ?
+    `).bind(newStatus, itemId).run();
+
+    return json({ ok: true, status: newStatus });
+  }
+
+  if (action === 'logout') {
+    if (env.CATALOG && session) {
+      await env.CATALOG.delete(`admin_sess:${session}`);
+    }
+    return json({ ok: true });
+  }
+
+  return error('Acção desconhecida');
+}
+
 // ---------- Main ----------
 export default {
   async fetch(request, env, ctx) {
@@ -275,6 +394,10 @@ export default {
 
       if (path === '/partner/data' && request.method === 'POST') {
         return await handlePartner(request, env);
+      }
+
+      if (path === '/admin/data' && request.method === 'POST') {
+        return await handleAdmin(request, env);
       }
 
       return error('Not found', 404);

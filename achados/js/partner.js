@@ -8,6 +8,7 @@ const API_BASE = window.ACHADOS_API_BASE || 'https://achados-api.dioboss15.worke
 const PartnerApp = {
   token: null,
   partner: null,
+  _modalResolver: null,
 
   init() {
     this.token = sessionStorage.getItem('achados_partner_token');
@@ -24,6 +25,16 @@ const PartnerApp = {
     });
 
     document.getElementById('logoutBtn')?.addEventListener('click', () => this.logout());
+
+    // Modal wiring (once)
+    document.getElementById('modalCancel')?.addEventListener('click', () => this._closeModal(false));
+    document.getElementById('modalConfirm')?.addEventListener('click', () => this._closeModal(true));
+    document.getElementById('appModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'appModal') this._closeModal(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this._modalResolver) this._closeModal(false);
+    });
   },
 
   showLogin() {
@@ -141,8 +152,61 @@ const PartnerApp = {
     }
   },
 
+  /**
+   * Promise-based branded modal.
+   * @param {{ title: string, body: string, confirmLabel?: string, cancelLabel?: string, showCancel?: boolean }} opts
+   * @returns {Promise<boolean>} true if confirmed
+   */
+  showModal({ title, body, confirmLabel = 'Confirmar', cancelLabel = 'Cancelar', showCancel = true }) {
+    return new Promise((resolve) => {
+      this._modalResolver = resolve;
+      const overlay = document.getElementById('appModal');
+      const errEl = document.getElementById('modalError');
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalBody').textContent = body;
+      errEl.hidden = true;
+      errEl.textContent = '';
+      const confirmBtn = document.getElementById('modalConfirm');
+      const cancelBtn = document.getElementById('modalCancel');
+      confirmBtn.textContent = confirmLabel;
+      confirmBtn.disabled = false;
+      cancelBtn.textContent = cancelLabel;
+      cancelBtn.style.display = showCancel ? '' : 'none';
+      overlay.hidden = false;
+      overlay.setAttribute('aria-hidden', 'false');
+      confirmBtn.focus();
+    });
+  },
+
+  _closeModal(confirmed) {
+    const overlay = document.getElementById('appModal');
+    if (!overlay || overlay.hidden) return;
+    overlay.hidden = true;
+    overlay.setAttribute('aria-hidden', 'true');
+    const resolver = this._modalResolver;
+    this._modalResolver = null;
+    if (resolver) resolver(confirmed);
+  },
+
+  _showModalError(message) {
+    const errEl = document.getElementById('modalError');
+    errEl.textContent = message;
+    errEl.hidden = false;
+  },
+
   async confirmReceipt(itemId) {
-    if (!confirm('Confirma que recebeu fisicamente este objecto no posto?')) return;
+    const confirmed = await this.showModal({
+      title: 'Confirmar recepção',
+      body: 'Confirma que recebeu fisicamente este objecto no posto?',
+      confirmLabel: 'Confirmar',
+      cancelLabel: 'Cancelar'
+    });
+    if (!confirmed) return;
+
+    // Brief loading state on the list item button is enough; keep UI simple
+    const list = document.getElementById('itemsList');
+    const prevHtml = list.innerHTML;
+    list.innerHTML = `<div class="state-box"><div class="spinner"></div><p>A confirmar recepção...</p></div>`;
 
     try {
       const res = await fetch(`${API_BASE}/partner/data`, {
@@ -158,7 +222,13 @@ const PartnerApp = {
       if (!res.ok || !data.ok) throw new Error(data.error || 'Falha ao confirmar');
       this.loadItems();
     } catch (err) {
-      alert(err.message);
+      list.innerHTML = prevHtml;
+      await this.showModal({
+        title: 'Não foi possível confirmar',
+        body: err.message || 'Ocorreu um erro. Tente novamente.',
+        confirmLabel: 'OK',
+        showCancel: false
+      });
     }
   }
 };
