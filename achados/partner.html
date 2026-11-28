@@ -53,10 +53,26 @@
         Aqui vê apenas os objectos atribuídos a este posto. Confirme a recepção física para actualizar o estado.
       </div>
 
-      <div id="itemsList">
-        <div class="state-box">
-          <div class="spinner"></div>
-          <p>A carregar itens...</p>
+      <div class="admin-tabs" id="partnerTabs">
+        <button type="button" class="admin-tab active" data-tab="items">Objectos</button>
+        <button type="button" class="admin-tab" data-tab="claims">Reclamações</button>
+      </div>
+
+      <div id="tabItems">
+        <div id="itemsList">
+          <div class="state-box">
+            <div class="spinner"></div>
+            <p>A carregar itens...</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="tabClaims" style="display:none;">
+        <div id="claimsList">
+          <div class="state-box">
+            <div class="spinner"></div>
+            <p>A carregar reclamações...</p>
+          </div>
         </div>
       </div>
     </div>

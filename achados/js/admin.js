@@ -40,6 +40,7 @@ const AdminApp = {
     });
     document.getElementById('logoutBtn')?.addEventListener('click', () => this.logout());
     document.getElementById('statusFilter')?.addEventListener('change', () => this.loadItems());
+    document.getElementById('claimStatusFilter')?.addEventListener('change', () => this.loadClaims());
 
     document.querySelectorAll('.admin-tab').forEach((btn) => {
       btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
@@ -68,9 +69,11 @@ const AdminApp = {
   switchTab(tab) {
     document.querySelectorAll('.admin-tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
     document.getElementById('tabItems').style.display = tab === 'items' ? 'block' : 'none';
+    document.getElementById('tabClaims').style.display = tab === 'claims' ? 'block' : 'none';
     document.getElementById('tabPartners').style.display = tab === 'partners' ? 'block' : 'none';
     if (tab === 'partners') this.loadPartners();
     if (tab === 'items') this.loadItems();
+    if (tab === 'claims') this.loadClaims();
   },
 
   async api(payload) {
@@ -235,6 +238,90 @@ const AdminApp = {
         data: { item_id: itemId, status: newStatus }
       });
       this.loadItems();
+    } catch (err) {
+      await this.showModal({
+        title: 'Erro',
+        body: err.message,
+        confirmLabel: 'OK',
+        showCancel: false
+      });
+    }
+  },
+
+  async loadClaims() {
+    const list = document.getElementById('claimsList');
+    list.innerHTML = `<div class="state-box"><div class="spinner"></div><p>A carregar...</p></div>`;
+    const status = document.getElementById('claimStatusFilter')?.value || '';
+
+    try {
+      const data = await this.api({
+        action: 'list_claims',
+        session: this.session,
+        data: { status }
+      });
+      const claims = data.claims || [];
+      if (claims.length === 0) {
+        list.innerHTML = `<div class="state-box"><div class="icon">📭</div><p>Nenhuma reclamação.</p></div>`;
+        return;
+      }
+
+      list.innerHTML = claims.map((c) => {
+        const pairs = (c.validation_questions || []).map((q, i) =>
+          `<div style="font-size:0.85rem;margin-top:0.25rem;"><strong>${escapeHtml(q)}</strong> → ${escapeHtml((c.answers || [])[i] || '—')}</div>`
+        ).join('');
+        const canAct = c.status === 'pendente' || c.status === 'em_analise';
+        return `
+          <div class="partner-item">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;">
+              <div>
+                <strong>${escapeHtml(c.description_public || c.category)}</strong>
+                <div style="font-size:0.85rem;color:var(--color-gray-500);margin-top:0.25rem;">
+                  <code>${escapeHtml(c.public_code)}</code>
+                  · ${escapeHtml(c.partner_name || '—')}
+                  · Contacto: ${escapeHtml(c.claimant_contact)}
+                </div>
+                <div style="font-size:0.8rem;color:var(--color-gray-500);">Item: ${escapeHtml(c.item_status || '')}</div>
+                ${pairs || '<div style="font-size:0.85rem;margin-top:0.25rem;color:var(--color-gray-500);">Sem perguntas</div>'}
+                ${c.partner_note ? `<div style="font-size:0.8rem;margin-top:0.35rem;">Nota: ${escapeHtml(c.partner_note)}</div>` : ''}
+              </div>
+              <span class="badge ${c.status === 'aceite' ? 'badge-recebido' : c.status === 'rejeitado' ? 'badge-encerrado' : 'badge-validacao'}">${escapeHtml(c.status)}</span>
+            </div>
+            ${canAct ? `
+              <div class="actions" style="flex-wrap:wrap;">
+                <button class="btn btn-success" style="padding:0.4rem 0.9rem;font-size:0.85rem;"
+                  onclick="AdminApp.respondClaim('${escapeHtml(c.id)}','aceite')">Aceitar</button>
+                <button class="btn btn-secondary" style="padding:0.4rem 0.9rem;font-size:0.85rem;"
+                  onclick="AdminApp.respondClaim('${escapeHtml(c.id)}','em_analise')">Em análise</button>
+                <button class="btn btn-secondary" style="padding:0.4rem 0.9rem;font-size:0.85rem;"
+                  onclick="AdminApp.respondClaim('${escapeHtml(c.id)}','rejeitado')">Rejeitar</button>
+              </div>
+            ` : ''}
+          </div>`;
+      }).join('');
+    } catch (err) {
+      list.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
+    }
+  },
+
+  async respondClaim(claimId, status) {
+    const labels = { aceite: 'Aceitar', rejeitado: 'Rejeitar', em_analise: 'Marcar em análise' };
+    const confirmed = await this.showModal({
+      title: labels[status] || 'Actualizar',
+      body: status === 'aceite'
+        ? 'Aceitar esta reclamação? O item passará a “Em validação”.'
+        : `Confirmar: ${labels[status]}?`,
+      confirmLabel: labels[status] || 'Confirmar',
+      cancelLabel: 'Cancelar'
+    });
+    if (!confirmed) return;
+
+    try {
+      await this.api({
+        action: 'respond_claim',
+        session: this.session,
+        data: { claim_id: claimId, status }
+      });
+      this.loadClaims();
     } catch (err) {
       await this.showModal({
         title: 'Erro',

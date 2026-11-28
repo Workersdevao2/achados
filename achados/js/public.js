@@ -93,6 +93,11 @@ const AchadosPublic = {
       btn.textContent = 'A registar...';
       msg.innerHTML = '';
 
+      const validation_questions = [1, 2, 3]
+        .map((n) => (document.getElementById('vq' + n)?.value || '').trim())
+        .filter(Boolean)
+        .slice(0, 3);
+
       const payload = {
         type: 'found',
         category: form.category.value,
@@ -102,7 +107,8 @@ const AchadosPublic = {
         provincia: form.provincia.value.trim() || 'Luanda',
         found_date_approx: form.found_date_approx.value,
         partner_id: form.partner_id.value,
-        finder_contact: form.finder_contact.value.trim()
+        finder_contact: form.finder_contact.value.trim(),
+        validation_questions
       };
 
       // Basic client validation
@@ -220,10 +226,11 @@ const AchadosPublic = {
         return;
       }
 
+      this._lastSearchItems = items;
       area.innerHTML = `
         <p style="margin-bottom:0.75rem;color:var(--color-gray-500);font-size:0.9rem;">${items.length} resultado(s)</p>
         <div class="card-grid">
-          ${items.map(it => `
+          ${items.map((it, idx) => `
             <div class="item-card">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
                 <h3>${escapeHtml(it.description_public || it.category)}</h3>
@@ -233,18 +240,122 @@ const AchadosPublic = {
                 <span>📍 ${escapeHtml(it.zone || '')}${it.municipio ? ', ' + escapeHtml(it.municipio) : ''}</span>
                 <span>📅 ${escapeHtml(it.found_date_approx || '')}</span>
                 ${it.partner_name ? `<span>🏛️ ${escapeHtml(it.partner_name)}</span>` : ''}
+                <span>🔖 <code>${escapeHtml(it.public_code || '')}</code></span>
               </div>
+              ${it.claimable ? `
+                <div style="margin-top:0.75rem;">
+                  <button type="button" class="btn btn-primary" style="padding:0.45rem 1rem;font-size:0.85rem;"
+                    onclick="AchadosPublic.openClaimForm(${idx})">Este é meu</button>
+                </div>
+              ` : `
+                <p style="font-size:0.8rem;color:var(--color-gray-500);margin-top:0.5rem;">
+                  Disponível para reclamação após confirmação de recepção no posto.
+                </p>
+              `}
             </div>
           `).join('')}
         </div>
         <div class="alert alert-warning" style="margin-top:1.25rem;">
           Encontrar uma correspondência provável <strong>não confirma</strong> a propriedade. Será sempre necessário validar a identidade ou a posse do bem junto do posto.
         </div>
+        <div id="claimPanel" style="display:none;margin-top:1.25rem;"></div>
       `;
     } catch (err) {
       console.error(err);
       area.innerHTML = `<div class="state-box"><p>Erro ao pesquisar. Verifique a ligação e tente novamente.</p></div>`;
     }
+  },
+
+  openClaimForm(idx) {
+    const it = (this._lastSearchItems || [])[idx];
+    const panel = document.getElementById('claimPanel');
+    if (!it || !panel) return;
+
+    const questions = Array.isArray(it.validation_questions) ? it.validation_questions : [];
+    const qFields = questions.length
+      ? questions.map((q, i) => `
+          <div class="form-group">
+            <label for="claim_a${i}">${escapeHtml(q)}</label>
+            <input type="text" id="claim_a${i}" class="form-control" required maxlength="200" />
+          </div>
+        `).join('')
+      : `<p class="hint" style="margin-bottom:0.75rem;">Não há perguntas específicas. Indique o seu contacto para o posto o contactar.</p>`;
+
+    panel.style.display = 'block';
+    panel.innerHTML = `
+      <div class="form-card">
+        <h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.35rem;">Reclamar: ${escapeHtml(it.public_code)}</h2>
+        <p style="font-size:0.9rem;color:var(--color-gray-500);margin-bottom:1rem;">
+          ${escapeHtml(it.description_public || '')}
+        </p>
+        <form id="claimForm">
+          ${qFields}
+          <div class="form-group">
+            <label for="claim_contact">O seu contacto (telefone / WhatsApp / e-mail) *</label>
+            <input type="text" id="claim_contact" class="form-control" required maxlength="120"
+              placeholder="Só o posto / admin verá este contacto" />
+          </div>
+          <div id="claimMessage"></div>
+          <div class="form-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button type="submit" class="btn btn-primary" id="claimSubmitBtn">Enviar reclamação</button>
+            <button type="button" class="btn btn-secondary" id="claimCancelBtn">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    `;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    document.getElementById('claimCancelBtn')?.addEventListener('click', () => {
+      panel.style.display = 'none';
+      panel.innerHTML = '';
+    });
+
+    document.getElementById('claimForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('claimSubmitBtn');
+      const msg = document.getElementById('claimMessage');
+      const contact = (document.getElementById('claim_contact')?.value || '').trim();
+      const answers = questions.map((_, i) => (document.getElementById('claim_a' + i)?.value || '').trim());
+
+      if (!contact) {
+        msg.innerHTML = `<div class="alert alert-danger">Indique um contacto.</div>`;
+        return;
+      }
+      if (questions.length && answers.some((a) => !a)) {
+        msg.innerHTML = `<div class="alert alert-danger">Responda a todas as perguntas.</div>`;
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'A enviar...';
+      msg.innerHTML = '';
+
+      try {
+        const res = await fetch(`${API_BASE}/claim`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            public_code: it.public_code,
+            claimant_contact: contact,
+            answers
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Falha ao registar reclamação');
+
+        panel.innerHTML = `
+          <div class="form-card" style="text-align:center;">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">✅</div>
+            <h2 style="font-size:1.15rem;margin-bottom:0.5rem;">Reclamação enviada</h2>
+            <p style="color:var(--color-gray-500);font-size:0.95rem;">${escapeHtml(data.message || 'O posto irá analisar.')}</p>
+          </div>
+        `;
+      } catch (err) {
+        msg.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
+        btn.disabled = false;
+        btn.textContent = 'Enviar reclamação';
+      }
+    });
   },
 
   async renderPartnersList() {

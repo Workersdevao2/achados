@@ -51,6 +51,7 @@
 
       <div class="admin-tabs" id="adminTabs">
         <button type="button" class="admin-tab active" data-tab="items">Itens</button>
+        <button type="button" class="admin-tab" data-tab="claims">Reclamações</button>
         <button type="button" class="admin-tab" data-tab="partners">Parceiros</button>
       </div>
 
@@ -67,6 +68,22 @@
           </select>
         </div>
         <div id="itemsList">
+          <div class="state-box"><div class="spinner"></div><p>A carregar...</p></div>
+        </div>
+      </div>
+
+      <div id="tabClaims" style="display:none;">
+        <div class="form-group" style="max-width:280px;margin-bottom:1rem;">
+          <label for="claimStatusFilter">Filtrar reclamações</label>
+          <select id="claimStatusFilter" class="form-control">
+            <option value="">Todas</option>
+            <option value="pendente">pendente</option>
+            <option value="em_analise">em_analise</option>
+            <option value="aceite">aceite</option>
+            <option value="rejeitado">rejeitado</option>
+          </select>
+        </div>
+        <div id="claimsList">
           <div class="state-box"><div class="spinner"></div><p>A carregar...</p></div>
         </div>
       </div>

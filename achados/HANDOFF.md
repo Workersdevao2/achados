@@ -1,7 +1,7 @@
 # Achados AO – Handoff Document
 
-**Date:** 2026-11-25  
-**Status:** Phase 1 complete + Phase 2 admin panel  
+**Date:** 2026-11-28  
+**Status:** Phase 1 complete + Phase 2 admin panel + Claims/validation v1  
 **Author context:** Built under strict static + Cloudflare Pages + single Worker architecture.
 
 ---
@@ -50,8 +50,15 @@ achados/
   - `demo-token-maianga-2026`
   - `demo-token-viana-2026`
 
+### Claims / validation (v1 – done)
+- Optional private validation questions on submit (max 3); partner can edit after receipt
+- Public claim via `POST /claim` (public_code + contact + answers); max 3 active claims per item
+- Claim only when item status is `Recebido no posto` or `Em validação`
+- Partner + Admin: list claims, accept / em_analise / reject
+- On accept → item status becomes `Em validação`
+- Public search never exposes answers or contacts
+
 ### Not yet implemented (remaining Phase 2+)
-- Full claims / validation questions flow
 - Citizen accounts
 - Points system
 - Soft-delete + 30-day purge
@@ -59,6 +66,7 @@ achados/
 - Signed Cloudinary uploads (Worker-generated)
 - Force-logout / auth_epoch
 - Production-grade partner token hashing (currently plain token match)
+- Rate limiting on `/submit` and `/claim`
 
 ---
 
@@ -115,10 +123,11 @@ const API_BASE = window.ACHADOS_API_BASE || 'https://achados-api.YOUR_SUBDOMAIN.
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | GET | `/catalog` | — | Categories + public partners |
-| POST | `/submit` | — | Register found item |
-| GET | `/items/public` | — | Public search (safe columns) |
-| POST | `/partner/data` | partner token | auth / list_items / confirm_receipt |
-| POST | `/admin/data` | ADMIN_PASSWORD → session | auth / list_partners / list_items / set_status / logout |
+| POST | `/submit` | — | Register found item (+ optional validation questions) |
+| GET | `/items/public` | — | Public search (safe columns + questions only if claimable) |
+| POST | `/claim` | — | Submit claim (contact + answers) |
+| POST | `/partner/data` | partner token | auth / list_items / confirm_receipt / set_questions / list_claims / respond_claim |
+| POST | `/admin/data` | ADMIN_PASSWORD → session | auth / list_partners / list_items / set_status / list_claims / respond_claim / logout |
 
 ---
 
@@ -138,14 +147,27 @@ const API_BASE = window.ACHADOS_API_BASE || 'https://achados-api.YOUR_SUBDOMAIN.
 
 ---
 
+## Deploy note for existing D1
+
+If the live DB was created before claims:
+
+```bash
+cd worker
+npx wrangler d1 execute achados-db --remote --command "ALTER TABLE items ADD COLUMN validation_questions_json TEXT DEFAULT '[]';"
+npx wrangler d1 execute achados-db --remote --file=./schema.sql
+```
+
+(`CREATE TABLE IF NOT EXISTS claims` is in schema.sql; ALTER is one-shot for the new column.)
+
 ## Suggested remaining Phase 2 order
 
-1. Claims table + validation questions (private).
+1. ~~Claims table + validation questions (private).~~ done
 2. Points ledger (award only on confirmed receipt).
 3. Soft-delete (`deleted_at`) + cron purge.
 4. Proper partner token hashing (Web Crypto).
 5. Signed Cloudinary uploads via Worker.
 6. Audit log.
+7. Rate limiting on public write endpoints.
 
 ---
 
