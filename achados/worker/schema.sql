@@ -60,6 +60,21 @@ CREATE INDEX IF NOT EXISTS idx_claims_item ON claims(item_id);
 CREATE INDEX IF NOT EXISTS idx_claims_status ON claims(status);
 CREATE INDEX IF NOT EXISTS idx_claims_public_code ON claims(public_code);
 
+-- Points ledger (Phase 2): award only on partner confirm_receipt
+CREATE TABLE IF NOT EXISTS points_ledger (
+  id TEXT PRIMARY KEY,
+  item_id TEXT NOT NULL UNIQUE,          -- one award per item (idempotent)
+  public_code TEXT,
+  finder_contact TEXT NOT NULL,          -- private
+  points INTEGER NOT NULL,
+  reason TEXT DEFAULT 'confirm_receipt',
+  partner_id TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_points_finder ON points_ledger(finder_contact);
+CREATE INDEX IF NOT EXISTS idx_points_created ON points_ledger(created_at);
+
 -- Seed a few demo partners (tokens are simple for Phase 1 – change in production)
 INSERT OR IGNORE INTO partners (id, name, type, address, municipio, provincia, api_token_hash, status) VALUES
 ('p1', 'Esquadra da Polícia – Talatona', 'esquadra', 'Talatona', 'Belas', 'Luanda', 'demo-token-talatona-2026', 'active'),

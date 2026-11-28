@@ -29,6 +29,7 @@ const CLAIM_STATUSES = ['pendente', 'em_analise', 'aceite', 'rejeitado'];
 const CLAIMABLE_ITEM_STATUSES = ['Recebido no posto', 'Em validação'];
 const MAX_ACTIVE_CLAIMS = 3;
 const MAX_QUESTIONS = 3;
+const POINTS_PER_CONFIRM = 10;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -332,7 +333,7 @@ async function handlePartner(request, env) {
     if (!itemId) return error('item_id em falta');
 
     const item = await env.DB.prepare(
-      `SELECT id, status, partner_id FROM items WHERE id = ?`
+      `SELECT id, status, partner_id, public_code, finder_contact FROM items WHERE id = ?`
     ).bind(itemId).first();
 
     if (!item) return error('Item não encontrado', 404);
@@ -357,7 +358,35 @@ async function handlePartner(request, env) {
       `).bind(itemId).run();
     }
 
-    return json({ ok: true, status: 'Recebido no posto' });
+    // Award points once per item (idempotent via UNIQUE item_id)
+    let pointsAwarded = 0;
+    const contact = (item.finder_contact || '').trim();
+    if (contact) {
+      const existing = await env.DB.prepare(
+        `SELECT id FROM points_ledger WHERE item_id = ?`
+      ).bind(itemId).first();
+      if (!existing) {
+        try {
+          await env.DB.prepare(`
+            INSERT INTO points_ledger (id, item_id, public_code, finder_contact, points, reason, partner_id)
+            VALUES (?, ?, ?, ?, ?, 'confirm_receipt', ?)
+          `).bind(
+            generateId(),
+            itemId,
+            item.public_code || null,
+            contact,
+            POINTS_PER_CONFIRM,
+            partner.id
+          ).run();
+          pointsAwarded = POINTS_PER_CONFIRM;
+        } catch (e) {
+          // UNIQUE race or missing table – do not fail the confirmation
+          console.error('points_ledger insert failed', e);
+        }
+      }
+    }
+
+    return json({ ok: true, status: 'Recebido no posto', points_awarded: pointsAwarded });
   }
 
   if (action === 'set_questions') {
@@ -606,6 +635,44 @@ async function handleAdmin(request, env) {
     }
 
     return json({ ok: true, status: newStatus });
+  }
+
+  if (action === 'list_points') {
+    const { results } = await env.DB.prepare(`
+      SELECT pl.id, pl.item_id, pl.public_code, pl.finder_contact, pl.points,
+             pl.reason, pl.partner_id, pl.created_at,
+             p.name AS partner_name
+      FROM points_ledger pl
+      LEFT JOIN partners p ON p.id = pl.partner_id
+      ORDER BY pl.created_at DESC
+      LIMIT 100
+    `).all();
+
+    const entries = (results || []).map((row) => ({
+      id: row.id,
+      item_id: row.item_id,
+      public_code: row.public_code,
+      // Truncate contact for ops display (still private surface)
+      finder_contact_hint: row.finder_contact
+        ? String(row.finder_contact).slice(0, 4) + '…'
+        : '—',
+      points: row.points,
+      reason: row.reason,
+      partner_id: row.partner_id,
+      partner_name: row.partner_name || null,
+      created_at: row.created_at
+    }));
+
+    const totalRow = await env.DB.prepare(
+      `SELECT COALESCE(SUM(points), 0) AS total_points, COUNT(*) AS entry_count FROM points_ledger`
+    ).first();
+
+    return json({
+      ok: true,
+      entries,
+      total_points: totalRow?.total_points ?? 0,
+      entry_count: totalRow?.entry_count ?? 0
+    });
   }
 
   if (action === 'logout') {

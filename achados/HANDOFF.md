@@ -1,7 +1,7 @@
 # Achados AO – Handoff Document
 
 **Date:** 2026-11-28  
-**Status:** Phase 1 complete + Phase 2 admin panel + Claims/validation v1  
+**Status:** Phase 1 complete + Phase 2 admin panel + Claims/validation v1 + Points ledger v1  
 **Author context:** Built under strict static + Cloudflare Pages + single Worker architecture.
 
 ---
@@ -162,7 +162,7 @@ npx wrangler d1 execute achados-db --remote --file=./schema.sql
 ## Suggested remaining Phase 2 order
 
 1. ~~Claims table + validation questions (private).~~ done
-2. Points ledger (award only on confirmed receipt).
+2. ~~Points ledger (award only on confirmed receipt).~~ done (v1: +10 on partner confirm_receipt, admin tab)
 3. Soft-delete (`deleted_at`) + cron purge.
 4. Proper partner token hashing (Web Crypto).
 5. Signed Cloudinary uploads via Worker.

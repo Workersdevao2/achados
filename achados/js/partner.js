@@ -373,6 +373,17 @@ const PartnerApp = {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'Falha ao confirmar');
+
+      const pts = Number(data.points_awarded) || 0;
+      if (pts > 0) {
+        await this.showModal({
+          title: 'Recepção confirmada',
+          body: `Objecto registado como recebido. +${pts} pontos atribuídos ao encontrador.`,
+          confirmLabel: 'OK',
+          showCancel: false
+        });
+      }
+
       this.loadItems();
     } catch (err) {
       list.innerHTML = prevHtml;

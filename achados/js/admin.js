@@ -71,9 +71,12 @@ const AdminApp = {
     document.getElementById('tabItems').style.display = tab === 'items' ? 'block' : 'none';
     document.getElementById('tabClaims').style.display = tab === 'claims' ? 'block' : 'none';
     document.getElementById('tabPartners').style.display = tab === 'partners' ? 'block' : 'none';
+    const tabPoints = document.getElementById('tabPoints');
+    if (tabPoints) tabPoints.style.display = tab === 'points' ? 'block' : 'none';
     if (tab === 'partners') this.loadPartners();
     if (tab === 'items') this.loadItems();
     if (tab === 'claims') this.loadClaims();
+    if (tab === 'points') this.loadPoints();
   },
 
   async api(payload) {
@@ -210,6 +213,47 @@ const AdminApp = {
               </div>
             </div>
             <span class="badge ${p.status === 'active' ? 'badge-recebido' : 'badge-encerrado'}">${escapeHtml(p.status)}</span>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      list.innerHTML = `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
+    }
+  },
+
+  async loadPoints() {
+    const list = document.getElementById('pointsList');
+    const summary = document.getElementById('pointsSummary');
+    if (!list) return;
+    list.innerHTML = `<div class="state-box"><div class="spinner"></div><p>A carregar...</p></div>`;
+    if (summary) summary.textContent = '';
+
+    try {
+      const data = await this.api({ action: 'list_points', session: this.session });
+      const entries = data.entries || [];
+      if (summary) {
+        summary.textContent = `Total atribuído: ${data.total_points ?? 0} pts · ${data.entry_count ?? 0} registos (últimos 100)`;
+      }
+      if (entries.length === 0) {
+        list.innerHTML = `<div class="state-box"><p>Nenhum ponto atribuído ainda.</p></div>`;
+        return;
+      }
+
+      list.innerHTML = entries.map((e) => `
+        <div class="partner-item">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;">
+            <div>
+              <strong>+${escapeHtml(String(e.points))} pts</strong>
+              <div style="font-size:0.85rem;color:var(--color-gray-500);margin-top:0.25rem;">
+                <code>${escapeHtml(e.public_code || '—')}</code>
+                · contacto: <code>${escapeHtml(e.finder_contact_hint || '—')}</code>
+                · ${escapeHtml(e.partner_name || e.partner_id || '—')}
+              </div>
+              <div style="font-size:0.8rem;color:var(--color-gray-500);margin-top:0.2rem;">
+                ${e.created_at ? new Date(e.created_at + 'Z').toLocaleString('pt-AO') : '—'}
+                · ${escapeHtml(e.reason || 'confirm_receipt')}
+              </div>
+            </div>
           </div>
         </div>
       `).join('');
