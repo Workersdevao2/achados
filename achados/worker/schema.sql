@@ -80,6 +80,3 @@ INSERT OR IGNORE INTO partners (id, name, type, address, municipio, provincia, a
 ('p1', 'Esquadra da Polícia – Talatona', 'esquadra', 'Talatona', 'Belas', 'Luanda', 'demo-token-talatona-2026', 'active'),
 ('p2', 'Bombeiros – Maianga', 'bombeiros', 'Maianga', 'Luanda', 'Luanda', 'demo-token-maianga-2026', 'active'),
 ('p3', 'Administração Municipal – Viana', 'admin', 'Viana', 'Viana', 'Luanda', 'demo-token-viana-2026', 'active');
-
--- --- Migration for existing D1 (run once if items table already exists without the column) ---
--- ALTER TABLE items ADD COLUMN validation_questions_json TEXT DEFAULT '[]';
